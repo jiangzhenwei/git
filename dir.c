@@ -92,7 +92,7 @@ int git_fnmatch(const struct pathspec_item *item,
 	/*
 	 * TODO: This is the main hot path, but untangling this whole
 	 * munging of the prefix is a PITA. We take e.g. the pattern
-	 * "t/**.sh" and then conclude that there's a directory "t",
+	 * "t/" + "**.sh" and then conclude that there's a directory "t",
 	 * and then match its entries (recursively) against "**.sh".
 	 *
 	 * We should try to just always match the full glob against
