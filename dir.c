@@ -90,16 +90,26 @@ int git_fnmatch(const struct pathspec_item *item,
 			ps_strcmp(item, pattern,
 				  string + string_len - pattern_len);
 	}
+
+	/*
+	 * TODO: This is the main hot path, but untangling this whole
+	 * munging of the prefix is a PITA. We take e.g. the pattern
+	 * "t/" + "**.sh" and then conclude that there's a directory "t",
+	 * and then match its entries (recursively) against "**.sh".
+	 *
+	 * We should try to just always match the full glob against
+	 * the full pattern. See my "BUG: wildmatches ... don't match
+	 * properly due to internal optimizations" on the mailing list
+	 * (<CACBZZX5u5fF4fJBJ3CwH0DmLBw4D32jN5o=Om-iqwQdPG93DFg@mail.gmail.com>).
+	 */
 	if (item->magic & PATHSPEC_GLOB)
 		return wildmatch(pattern, string,
 				 WM_PATHNAME |
-				 (item->magic & PATHSPEC_ICASE ? WM_CASEFOLD : 0),
-				 NULL);
+				 (item->magic & PATHSPEC_ICASE ? WM_CASEFOLD : 0));
 	else
 		/* wildmatch has not learned no FNM_PATHNAME mode yet */
 		return wildmatch(pattern, string,
-				 item->magic & PATHSPEC_ICASE ? WM_CASEFOLD : 0,
-				 NULL);
+				 item->magic & PATHSPEC_ICASE ? WM_CASEFOLD : 0);
 }
 
 static int fnmatch_icase_mem(const char *pattern, int patternlen,
@@ -123,7 +133,7 @@ static int fnmatch_icase_mem(const char *pattern, int patternlen,
 
 	if (ignore_case)
 		flags |= WM_CASEFOLD;
-	match_status = wildmatch(use_pat, use_str, flags, NULL);
+	match_status = wildmatch(use_pat, use_str, flags);
 
 	strbuf_release(&pat_buf);
 	strbuf_release(&str_buf);
